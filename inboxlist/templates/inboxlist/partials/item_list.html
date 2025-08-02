@@ -1,0 +1,9 @@
+<ul class="list-group {% if processed %}text-muted{% endif %}">
+    {% for item in items %}
+        {% include 'inboxlist/partials/item.html' %}
+    {% empty %}
+        <li class="list-group-item text-muted">
+            Brak {% if processed %}przetworzonych{% else %}rzeczy do przetworzenia{% endif %}
+        </li>
+    {% endfor %}
+</ul>

@@ -1,0 +1,38 @@
+<div class="modal fade show d-block" tabindex="-1" id="htmx-modal" style="background: rgba(0, 0, 0, 0.5);">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form 
+        method="POST"
+        hx-post="{% url 'delete_item' item.id %}" 
+        hx-target="body" 
+        hx-swap="outerHTML"
+      >
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Potwierdzenie usunięcia</h5>
+          <button 
+            type="button" 
+            class="btn-close" 
+            hx-get="about:blank"
+            hx-target="#htmx-modal"
+            hx-swap="outerHTML"
+          ></button>
+        </div>
+        <div class="modal-body">
+          Czy na pewno chcesz usunąć <strong>{{ item.title }}</strong>? <br>
+          <small>Usunięcie jest nieodwracalne.</small>
+        </div>
+        <div class="modal-footer">
+          <button 
+            type="button" 
+            class="btn btn-secondary"
+            hx-get="about:blank"
+            hx-target="#htmx-modal"
+            hx-swap="outerHTML"
+          >Anuluj</button>
+          <button type="submit" class="btn btn-danger">Usuń</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
