@@ -1,0 +1,16 @@
+<form 
+    method="POST" 
+    hx-post="{% url 'update_item' item.id %}" 
+    hx-target="this" 
+    hx-swap="outerHTML"
+>
+    {% csrf_token %}
+    <input 
+        type="text" 
+        name="title" 
+        value="{{ item.title }}" 
+        class="form-control form-control-sm"
+        autofocus
+        onblur="this.form.requestSubmit()" 
+    >
+</form>

@@ -14,9 +14,15 @@
                 onchange="this.form.submit()" 
                 {% if item.is_processed %}checked{% endif %}
             >
-            <label class="form-check-label">
+            <div 
+                hx-get="{% url 'edit_item' item.id %}" 
+                hx-trigger="click" 
+                hx-target="this" 
+                hx-swap="outerHTML"
+                style="cursor: pointer;"
+            >
                 {{ item.title }}
-            </label>
+            </div>
         </div>
     </form>
 

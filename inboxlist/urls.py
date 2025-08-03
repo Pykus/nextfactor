@@ -1,10 +1,12 @@
 from django.urls import path
 from .views import (
+    edit_item,
     inbox_list,
     add_item,
     toggle_processed,
     confirm_delete_modal,
     delete_item,
+    update_item,
 )
 
 urlpatterns = [
@@ -16,5 +18,7 @@ urlpatterns = [
         confirm_delete_modal,
         name="confirm_delete_modal",
     ),
+    path("edit/<int:pk>/", edit_item, name="edit_item"),
+    path("update/<int:pk>/", update_item, name="update_item"),
     path("delete/<int:pk>/", delete_item, name="delete_item"),
 ]

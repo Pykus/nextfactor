@@ -33,6 +33,19 @@ def add_item(request):
     )
 
 
+def edit_item(request, pk):
+    item = get_object_or_404(InboxItem, pk=pk)
+    return render(request, "inboxlist/partials/item_edit_form.html", {"item": item})
+
+
+@require_POST
+def update_item(request, pk):
+    item = get_object_or_404(InboxItem, pk=pk)
+    item.title = request.POST.get("title")
+    item.save()
+    return HttpResponse(item.title)
+
+
 @require_POST
 def toggle_processed(request, pk):
     item = get_object_or_404(InboxItem, pk=pk)
