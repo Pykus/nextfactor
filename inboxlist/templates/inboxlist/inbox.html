@@ -8,7 +8,20 @@
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
 <body class="container py-4">
-    <h1 class="mb-4">📥 Inbox</h1>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <strong>📋 Lista:</strong> <span id="current-list">{{ list_name }}</span>
+    </div>
+    <button 
+        class="btn btn-sm btn-outline-secondary"
+        hx-get="{% url 'select_list' %}"
+        hx-target="body"
+        hx-swap="outerHTML"
+    >
+        Zmień listę
+    </button>
+</div>
+
 
     <form 
         class="input-group mb-4"
