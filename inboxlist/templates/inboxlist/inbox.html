@@ -28,7 +28,7 @@
         method="POST"
         hx-post="{% url 'add_item' %}" 
         hx-target="#unprocessed-list" 
-        hx-swap="outerHTML"
+        hx-swap="innerHTML"
     >
         {% csrf_token %}
         <input type="text" name="title" class="form-control" placeholder="Dodaj coś..." required>

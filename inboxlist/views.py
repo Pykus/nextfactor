@@ -6,18 +6,22 @@ from django.db.models import Count
 from .models import InboxItem
 
 
+def get_db_for_list(list_name: str) -> str:
+    return "local_list" if list_name == "lokalna_lista" else "default"
+
+
 def get_current_list(request):
     return request.COOKIES.get("list_name", "lokalna_lista")
 
 
 def get_inbox_context(list_name):
     return {
-        "unprocessed": InboxItem.objects.filter(
-            list_name=list_name, is_processed=False
-        ).order_by("-created_at"),
-        "processed": InboxItem.objects.filter(
-            list_name=list_name, is_processed=True
-        ).order_by("-created_at"),
+        "unprocessed": InboxItem.objects.using(get_db_for_list(list_name))
+        .filter(list_name=list_name, is_processed=False)
+        .order_by("-created_at"),
+        "processed": InboxItem.objects.using(get_db_for_list(list_name))
+        .filter(list_name=list_name, is_processed=True)
+        .order_by("-created_at"),
         "list_name": list_name,
     }
 
@@ -37,10 +41,13 @@ def inbox_list(request):
 def add_item(request):
     title = request.POST.get("title")
     list_name = get_current_list(request)
+    db = get_db_for_list(list_name)
     if title:
-        InboxItem.objects.create(title=title, list_name=list_name)
-    items = InboxItem.objects.filter(list_name=list_name, is_processed=False).order_by(
-        "-created_at"
+        InboxItem.objects.using(db).create(title=title, list_name=list_name)
+    items = (
+        InboxItem.objects.using(db)
+        .filter(list_name=list_name, is_processed=False)
+        .order_by("-created_at")
     )
     return render(
         request,
@@ -50,13 +57,15 @@ def add_item(request):
 
 
 def edit_item(request, pk):
-    item = get_object_or_404(InboxItem, pk=pk)
+    db = get_db_for_list(get_current_list(request))
+    item = get_object_or_404(InboxItem.objects.using(db), pk=pk)
     return render(request, "inboxlist/partials/item_edit_form.html", {"item": item})
 
 
 @require_POST
 def update_item(request, pk):
-    item = get_object_or_404(InboxItem, pk=pk)
+    db = get_db_for_list(get_current_list(request))
+    item = get_object_or_404(InboxItem.objects.using(db), pk=pk)
     item.title = request.POST.get("title")
     item.save()
     return HttpResponse(item.title)
@@ -65,7 +74,8 @@ def update_item(request, pk):
 @require_POST
 def toggle_processed(request, pk):
     list_name = get_current_list(request)
-    item = get_object_or_404(InboxItem, pk=pk, list_name=list_name)
+    db = get_db_for_list(list_name)
+    item = get_object_or_404(InboxItem.objects.using(db), pk=pk, list_name=list_name)
     item.is_processed = not item.is_processed
     item.save()
     return render(request, "inboxlist/inbox.html", get_inbox_context(list_name))
@@ -74,7 +84,8 @@ def toggle_processed(request, pk):
 @require_POST
 def delete_item(request, pk):
     list_name = get_current_list(request)
-    item = get_object_or_404(InboxItem, pk=pk, list_name=list_name)
+    db = get_db_for_list(list_name)
+    item = get_object_or_404(InboxItem.objects.using(db), pk=pk, list_name=list_name)
     item.delete()
 
     if request.headers.get("HX-Request"):
@@ -84,7 +95,8 @@ def delete_item(request, pk):
 
 
 def confirm_delete_modal(request, pk):
-    item = get_object_or_404(InboxItem, pk=pk)
+    db = get_db_for_list(get_current_list(request))
+    item = get_object_or_404(InboxItem.objects.using(db), pk=pk)
     html = render_to_string(
         "inboxlist/partials/confirm_delete_modal.html", {"item": item}, request=request
     )
@@ -103,11 +115,27 @@ def set_list(request):
 
 
 def select_list(request):
-    existing_lists = (
-        InboxItem.objects.values("list_name")
+    all_lists = []
+
+    # z default (czyli zdalnej/postgres)
+    remote_lists = (
+        InboxItem.objects.using("default")
+        .values("list_name")
         .annotate(item_count=Count("id"))
-        .order_by("-item_count")
     )
+    all_lists.extend(remote_lists)
+
+    # z lokalnej bazy
+    local_lists = (
+        InboxItem.objects.using("local_list")
+        .values("list_name")
+        .annotate(item_count=Count("id"))
+    )
+    all_lists.extend(local_lists)
+
+    # posortuj malejąco po liczbie elementów
+    sorted_lists = sorted(all_lists, key=lambda x: -x["item_count"])
+
     return render(
-        request, "inboxlist/select_list.html", {"existing_lists": existing_lists}
+        request, "inboxlist/select_list.html", {"existing_lists": sorted_lists}
     )
